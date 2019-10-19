@@ -1,5 +1,4 @@
 #pragma once
-#include "fmt/printf.h"
 #include "nonstd/string_view.hpp"
 #include "constexpr_string.h"
 using nonstd::string_view;
@@ -12,7 +11,8 @@ enum class Log {
     Debug,
 };
 
-constexpr string_view get_color(Log type) {
+namespace detail {  
+constexpr string_view logGetColor(Log type) {
     switch (type) {
         case Log::General: return "\e[m";
         case Log::Warning: return "\e[33m";
@@ -22,8 +22,8 @@ constexpr string_view get_color(Log type) {
     }
     return "\e[m";
 }
-
-namespace detail {  
+    
+    
 constexpr string_view trimFilePath(const char *filename) {
         size_t length = 0;
         for (; *filename; ++length, ++filename) {}
@@ -54,7 +54,7 @@ constexpr string_view trimFilePath(const char *filename) {
     static_assert(std::is_convertible<decltype(s_type), const char*>(), "s_type should be convertable to const char*"); \
     static_assert(std::is_convertible<decltype(_fmt), const char*>(), "_fmt should be convertable to const char*"); \
     constexpr string_view view_filename = detail::trimFilePath(_filename);\
-    constexpr auto color = get_color(_type); \
+    constexpr auto color = detail::logGetColor(_type); \
     constexpr auto color_size = color.size(); \
     constexpr auto fmt_ = make_constexpr_string<color_size>(color.data()) + "HOST: %s " + make_constexpr_string(s_type) + ": " + make_constexpr_string<view_filename.size()>(view_filename.data()) + ":" + _line + ": " + _fmt + "\e[m" "\n"; \
     time_t t;\
@@ -68,7 +68,7 @@ constexpr string_view trimFilePath(const char *filename) {
 #else
 #define DETAIL_WRITE_LOG(_filename, _line, _type, s_type, _fmt, ...) do {\
     constexpr string_view view_filename = detail::trimFilePath(_filename);\
-    constexpr auto color = get_color(_type); \
+    constexpr auto color = detail::logGetColor(_type); \
     constexpr auto color_size = color.size(); \
     constexpr auto fmt_ = make_constexpr_string<color_size>(color.data()) + "DEVIDE: " + make_constexpr_string(s_type) + ": " + make_constexpr_string<view_filename.size()>(view_filename.data()) + ":" + _line + ": " + _fmt + "\e[m" "\n"; \
     printf(fmt_.data() ,##__VA_ARGS__); \

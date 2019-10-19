@@ -10,11 +10,11 @@ struct constexpr_string {
     
     template <std::size_t... Indexes>
     explicit constexpr constexpr_string(char const variable[size  + 1], std::index_sequence<Indexes...>) 
-    : m_data{ variable[Indexes]..., '\0' }
+        : m_data{ variable[Indexes]..., '\0' }
     {}
     
     constexpr constexpr_string(char const variable[size + 1]) 
-    : constexpr_string(variable, std::make_index_sequence<size>{})
+        : constexpr_string(variable, std::make_index_sequence<size>{})
     {}
         
     constexpr size_t length() const {
