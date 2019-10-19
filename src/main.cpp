@@ -21,17 +21,38 @@ void setupRender(float3 *framebuffer, const int width, const int height) {
 }
 
 __device__
+float hitSphere(float3 const &center, float radious, Ray const &ray) noexcept {
+    float3 oc = ray.origin() - center;
+    float a = dot(ray.direction(), ray.direction());
+    float b = 2.0f * dot(oc, ray.direction());
+    float c = dot(oc, oc) - radious * radious;
+    float discriminant = b * b - 4.0f * a *c;
+    if (discriminant < 0.0f) {
+        return -1.0f;
+    }
+    return (-b - sqrtf(discriminant)) / (2.0f * a);
+}
+
+__device__
 float3 color(Ray const &ray) {
+    constexpr float3 sphereOrigin { 0.0f, 0.0f, -1.0f };
+    constexpr float  sphereRadious { 0.5f };
+    float t = hitSphere(sphereOrigin, sphereRadious, ray);
+    if (t > 0) {
+        auto normal = normalize(ray.pointAtParameter(t) - sphereOrigin);
+        return 0.5f * float3 { normal.x + 1.0f, normal.y + 1.0f, normal.z + 1.0f };
+    }
+    
     float3 unitDirection = normalize(ray.direction());
-    float t = 0.5f * (unitDirection.y + 1.0f);
+    t = 0.5f * (unitDirection.y + 1.0f);
     return (1.0f - t) * float3 {1.0f, 1.0f, 1.0f} + t * float3{0.5, 0.7, 1.0};
 }
 
 __global__
 void render(float3 *framebuffer, const int width, const int height) {
-    constexpr float3 lower_left_corner { -2.0f, -1.0f, -1.0f };
+    constexpr float3 lower_left_corner { -2.0f, -0.857f, -1.0f };
     constexpr float3 horizontal { 4.0f, 0.0f, 0.0f };
-    constexpr float3 vertical { 0.0f, 2.0f, 0.0f };
+    constexpr float3 vertical { 0.0f, 1.714, 0.0f };
     constexpr float3 origin { 0.0, 0.0, 0.0 };
     
     int x = hipBlockDim_x * hipBlockIdx_x + hipThreadIdx_x;
@@ -50,7 +71,7 @@ void render(float3 *framebuffer, const int width, const int height) {
 
 int main() {
     float3* framebuffer;
-    constexpr int width = 1280;
+    constexpr int width = 1680;
     constexpr int height = 720;
     constexpr int framebuffer_size = width * height * sizeof(float3);
     
@@ -77,11 +98,7 @@ int main() {
     
     hipDeviceSynchronize();
     writeLog(General, "setupRender finished");
-    
-    float3 test = make_float3(1, 1, 1);
-    float3 test2 = make_float3(1, 1, 1);
-    test += test2;
-    
+        
     std::ofstream fout("result.ppm");;
     fout << "P3\n" << width << " " << height << "\n255\n";
     for (int j = height - 1; j >= 0; j--) {
