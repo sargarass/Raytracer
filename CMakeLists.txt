@@ -34,7 +34,12 @@ set(Sources
 
 set(Headers
         src/logger.h
-        src/constexpr_string.h)
+        src/constexpr_string.h
+        src/kernel_config.h
+        src/math.h
+        src/common.h
+        src/ray.h
+        src/triangle.h)
 
 set(HIPCC_OPTIONS)
 set(HCC_OPTIONS)

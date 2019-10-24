@@ -167,8 +167,13 @@ namespace details
 
 #endif // GSL_THROW_ON_CONTRACT_VIOLATION
 
+#ifndef __HIP_DEVICE_COMPILE__
 #define Expects(cond) GSL_CONTRACT_CHECK("Precondition", cond)
 #define Ensures(cond) GSL_CONTRACT_CHECK("Postcondition", cond)
+#else
+#define Expects(cond) assert(cond && "Precondition")
+#define Ensures(cond) assert(cond && "Postcondition")
+#endif
 
 #if defined(GSL_MSVC_USE_STL_NOEXCEPTION_WORKAROUND) && defined(__clang__)
 #pragma clang diagnostic pop

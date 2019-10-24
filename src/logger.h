@@ -41,6 +41,17 @@ constexpr string_view trimFilePath(const char *filename) {
         for (--filename, --length; length > 0 && *filename != '/'; --length, --filename) {}
         return (!length)? filename : filename + 1;
     }
+
+    template<typename...Args>
+    static inline void writeLog_(string_view fmt, Args &&... args) {
+        time_t t;
+        tm now;
+        char time_str[40];
+        std::time(&t);
+        localtime_r(&t, &now);
+        std::strftime(time_str, sizeof(time_str), "%Y-%m-%dT%H:%M:%S", &now);
+        printf(fmt.data(), time_str , std::forward<Args>(args)...);
+    }
 }
 
 #define DETAIL_STRINGIZE(x) DETAIL_STRINGIZE2(x)
@@ -53,28 +64,19 @@ constexpr string_view trimFilePath(const char *filename) {
     static_assert(std::is_convertible<decltype(_type), Log>(), "_type should be convertable to Log"); \
     static_assert(std::is_convertible<decltype(s_type), const char*>(), "s_type should be convertable to const char*"); \
     static_assert(std::is_convertible<decltype(_fmt), const char*>(), "_fmt should be convertable to const char*"); \
-    constexpr string_view view_filename = detail::trimFilePath(_filename);\
-    constexpr auto color = detail::logGetColor(_type); \
-    constexpr auto color_size = color.size(); \
-    constexpr auto fmt_ = make_constexpr_string<color_size>(color.data()) + "HOST: %s " + make_constexpr_string(s_type) + ": " + make_constexpr_string<view_filename.size()>(view_filename.data()) + ":" + _line + ": " + _fmt + "\e[m" "\n"; \
-    time_t t;\
-    tm now;\
-    char time_str[256];\
-    std::time(&t);\
-    localtime_r(&t, &now);\
-    std::strftime(time_str, sizeof(time_str), "%Y-%m-%dT%H:%M:%S", &now);\
-    printf(fmt_.data(), time_str ,##__VA_ARGS__); \
+    static constexpr string_view ____LOG_view_filename = detail::trimFilePath(_filename);\
+    static constexpr auto ____LOG_color = detail::logGetColor(_type); \
+    static constexpr auto ____LOG_fmt_ = make_constexpr_string<____LOG_color.size()>(____LOG_color.data()) + "HOST: %s " + make_constexpr_string(s_type) + ": " + make_constexpr_string<____LOG_view_filename.size()>(____LOG_view_filename.data()) + ":" + _line + ": " + _fmt + "\e[m" "\n"; \
+    static constexpr string_view ____LOG_fmt {____LOG_fmt_.data(), ____LOG_fmt_.length()};\
+    detail::writeLog_(____LOG_fmt ,##__VA_ARGS__);\
 } while(0)
 #else
 #define DETAIL_WRITE_LOG(_filename, _line, _type, s_type, _fmt, ...) do {\
-    constexpr string_view view_filename = detail::trimFilePath(_filename);\
-    constexpr auto color = detail::logGetColor(_type); \
-    constexpr auto color_size = color.size(); \
-    constexpr auto fmt_ = make_constexpr_string<color_size>(color.data()) + "DEVIDE: " + make_constexpr_string(s_type) + ": " + make_constexpr_string<view_filename.size()>(view_filename.data()) + ":" + _line + ": " + _fmt + "\e[m" "\n"; \
-    printf(fmt_.data() ,##__VA_ARGS__); \
-} while(0) 
+    static constexpr string_view ____LOG_view_filename = detail::trimFilePath(_filename);\
+    static constexpr auto ____LOG_color = detail::logGetColor(_type); \
+    static constexpr auto ____LOG_fmt_ = make_constexpr_string<____LOG_color.size()>(____LOG_color.data()) + "DEVIDE: " + make_constexpr_string(s_type) + ": " + make_constexpr_string<____LOG_view_filename.size()>(____LOG_view_filename.data()) + ":" + _line + ": " + _fmt + "\e[m" "\n"; \
+    printf(____LOG_fmt_.data() ,##__VA_ARGS__); \
+} while(0)
 #endif
-
 #define writeLog(type, fmt, ...) DETAIL_WRITE_LOG(__FILE__, LINE_STRING, Log::type, #type, fmt,##__VA_ARGS__)
-
 
