@@ -218,6 +218,25 @@ float3 normalize(float3 const &a) noexcept {
     return {a.x * c, a.y * c, a.z * c};
 }
 
+template <class D, class S>
+__host__ __device__ static inline constexpr
+D bit_cast(const S& src) {
+    static_assert(sizeof(D) == sizeof(S),
+                  "bit_cast requires source and destination to be the same size");
+    static_assert(std::is_trivially_copyable<D>::value,
+                  "bit_cast requires the destination type to be copyable");
+    static_assert(std::is_trivially_copyable<S>::value,
+                  "bit_cast requires the source type to be copyable");
+    D dst;
+    memcpy(&dst, &src, sizeof(D));
+    return dst;
+}
+
+__host__ __device__ static inline constexpr
+float xor_signmask(float x, int y) {
+    return bit_cast<float>(bit_cast<int>(x) ^ y);
+}
+
 __host__ __device__ static inline constexpr
 float4 operator+(float4 const &a, float4 const &b) noexcept {
     return {a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w};

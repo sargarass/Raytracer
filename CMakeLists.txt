@@ -30,7 +30,8 @@ find_package(hiprand REQUIRED)
 include_directories(extern/headers_only)
 
 set(Sources
-        src/main.cpp)
+        src/main.cpp
+        src/kernel.cpp)
 
 set(Headers
         src/logger.h
@@ -39,11 +40,12 @@ set(Headers
         src/math.h
         src/common.h
         src/ray.h
-        src/triangle.h)
+        src/triangle.h
+        src/kernel.h)
 
 set(HIPCC_OPTIONS)
 set(HCC_OPTIONS)
-set(NVCC_OPTIONS -ccbin=gcc-8.3.0 -Xcompiler -O3,-Wall,-Wextra,-Werror=float-conversion,-Werror=double-promotion,-Wno-unused-function -Xlinker ${hiprand_LIBRARIES} -Xptxas -v -rdc=true -std=c++14 --expt-relaxed-constexpr)
+set(NVCC_OPTIONS -ccbin=gcc-8.3.0 -Xcompiler -O3,-Wall,-Wextra,-Woverloaded-virtual,-Werror=float-conversion,-Werror=double-promotion,-Wno-unused-function -Xlinker ${hiprand_LIBRARIES} -Xptxas -v -rdc=true -std=c++14 --expt-relaxed-constexpr)
 
 set_source_files_properties(${Sources} PROPERTIES HIP_SOURCE_PROPERTY_FORMAT 1)
 hip_add_executable(raytracer ${Sources} ${Headers} HIPCC_OPTIONS ${HIPCC_OPTIONS} HCC_OPTIONS ${HCC_OPTIONS} NVCC_OPTIONS ${NVCC_OPTIONS})

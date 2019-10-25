@@ -5,11 +5,17 @@
 
 namespace primitives {
     class triangle {
-        __host__ __device__
-        triangle() noexcept {}
+    public:
+        constexpr __host__ __device__
+        triangle() noexcept
+                : a {0.0f, 0.0f, 0.0f},
+                  b {0.0f, 0.0f, 0.0f},
+                  c {0.0f, 0.0f, 0.0f}
+        {}
 
+        constexpr __host__ __device__
         triangle(float3 const &a, float3 const &b, float3 const &c) noexcept
-        : a { a }, b { b }, c { c }
+                : a { a }, b { b }, c { c }
         {}
 
         constexpr __host__ __device__
