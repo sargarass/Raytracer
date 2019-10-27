@@ -18,17 +18,35 @@ int main() {
     auto framebuffer = hip_alloc_managed_unique<float3[]>(framebuffer_size);
 
     // 2 spheres & 1 triangle
-    auto meshes = hip_alloc_managed_unique<float3[]>(2 * (2) + 1 * 3);
+    auto meshes = hip_alloc_managed_unique<float3[]>(2 * (2) + 1 * 36);
     constexpr size_t objects_count = 3;
 
     auto objects = hip_alloc_managed_unique<object[]>(3);
     objects[0] = object {object_type::sphere, meshes.get() + 0, 2};
     objects[1] = object {object_type::sphere, meshes.get() + 2, 2};
-    objects[2] = object {object_type::polygonal, meshes.get() + 4, 3};
+    objects[2] = object {object_type::polygonal, meshes.get() + 4, 36};
+
+
 
     float3 sphere_0[2] { float3{0, 0, -1}, float3{ 0.1f } };
     float3 sphere_1[2] { float3{0, -100.5, -1}, float3{ 100 } };
-    float3 triangle[3] { float3{-2.0f, 0, -1.0f}, float3{-1.0, 0, -1.0f}, float3{-1.5f, 0.5f, -1.0f} };
+    float3 triangle[36] { float3{-1.0f, -1.0,   1.0f}, float3{ 1.0f, -1.0f,  1.0f}, float3{ 1.0f,  1.0f,  1.0f},
+                          float3{-1.0f, -1.0f,  1.0f}, float3{ 1.0f,  1.0f,  1.0f}, float3{-1.0f,  1.0f,  1.0f},
+                          float3{ 1.0f, -1.0f,  1.0f}, float3{ 1.0f, -1.0f, -1.0f}, float3{ 1.0f,  1.0f, -1.0f},
+                          float3{ 1.0f, -1.0f,  1.0f}, float3{ 1.0f,  1.0f, -1.0f}, float3{ 1.0f,  1.0f,  1.0f},
+                          float3{ 1.0f, -1.0f, -1.0f}, float3{-1.0f, -1.0f, -1.0f}, float3{-1.0f,  1.0f, -1.0f},
+                          float3{ 1.0f, -1.0f, -1.0f}, float3{-1.0f,  1.0f, -1.0f}, float3{ 1.0f,  1.0f, -1.0f},
+                          float3{-1.0f, -1.0f, -1.0f}, float3{-1.0f, -1.0f,  1.0f}, float3{-1.0f,  1.0f,  1.0f},
+                          float3{-1.0f, -1.0f, -1.0f}, float3{-1.0f,  1.0f,  1.0f}, float3{-1.0f,  1.0f,  1.0f},
+                          float3{-1.0f,  1.0f,  1.0f}, float3{ 1.0f,  1.0f,  1.0f}, float3{ 1.0f,  1.0f, -1.0f},
+                          float3{-1.0f,  1.0f,  1.0f}, float3{ 1.0f,  1.0f, -1.0f}, float3{-1.0f,  1.0f, -1.0f},
+                          float3{ 1.0f, -1.0f,  1.0f}, float3{-1.0f, -1.0f, -1.0f}, float3{ 1.0f, -1.0f, -1.0f},
+                          float3{ 1.0f, -1.0f,  1.0f}, float3{-1.0f, -1.0f,  1.0f}, float3{-1.0f, -1.0f, -1.0f} };
+
+    for (auto &vec : triangle) {
+        vec.z -= 3.0f;
+        vec.x -= 2.0f;
+    }
 
     memcpy(objects[0].mesh, &sphere_0, sizeof(sphere_0));
     memcpy(objects[1].mesh, &sphere_1, sizeof(sphere_1));

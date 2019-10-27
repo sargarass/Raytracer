@@ -4,20 +4,33 @@ namespace kernel {
     __constant__ global_data kg;
 
     __device__
-    float hit_sphere(float3 const &center, float radious, core::ray const &ray) noexcept {
+    bool hit_sphere(float3 const &center, float const radius, core::ray const &ray,
+                    float const t_min, float const t_max, float &t) noexcept {
         float3 oc = ray.origin() - center;
         float a = dot(ray.direction(), ray.direction());
-        float b = 2.0f * dot(oc, ray.direction());
-        float c = dot(oc, oc) - radious * radious;
-        float discriminant = b * b - 4.0f * a *c;
-        if (discriminant < 0.0f) {
-            return -1.0f;
+        float b = dot(oc, ray.direction());
+        float c = dot(oc, oc) - radius * radius;
+        float discriminant = b * b - a * c;
+        if (discriminant >= 0.0f) {
+            float sqrt_discriminant = sqrtf(discriminant);
+            float t1 = (-b - sqrt_discriminant) / a;
+            if (t1 > t_min && t1 < t_max) {
+                t = t1;
+                return true;
+            }
+
+            float t2 = (-b + sqrt_discriminant) / a;
+            if (t2 > t_min && t2 < t_max) {
+                t = t2;
+                return true;
+            }
         }
-        return (-b - sqrtf(discriminant)) / (2.0f * a);
+        return false;
     }
 
     __device__
-    bool hit_triangle(core::ray const &ray, primitives::triangle const &triangle, float &t, float &u, float &v) {
+    bool hit_triangle(core::ray const &ray, primitives::triangle const &triangle,
+                      float const t_min, float const t_max, float &t, float &u, float &v) {
         float3 origin = ray.origin();
         float3 direction = ray.direction();
 
@@ -55,40 +68,44 @@ namespace kernel {
         if (sign_T < 0.0f) {
             return false;
         }
-
         const float inv_den = 1.0f / den;
-
-        u = U * inv_den;
-        v = V * inv_den;
         t = T * inv_den;
-        return true;
+        if (t > t_min && t < t_max) {
+            u = U * inv_den;
+            v = V * inv_den;
+            return true;
+        }
+        return false;
     }
 
     __device__
     hit_record scene_intersect(core::ray const &ray) {
         hit_record result { FLT_MAX, 0 };
+        constexpr float t_min = 1.0e-7f;
         for (uint32_t i = 0; i < kg.objects_count; ++i) {
             switch (kg.objects[i].type) {
                 case object_type::sphere: {
                     float3 origin = kg.objects[i].mesh[0];
-                    float radious = kg.objects[i].mesh[1].x;
-                    float t = hit_sphere(origin, radious, ray);
-                    if (t > 0 && t < result.t) {
+                    float radius = kg.objects[i].mesh[1].x;
+                    float t;
+                    if (hit_sphere(origin, radius, ray, t_min, result.t, t)) {
                         result.t = t;
                         result.object_id = i;
                     }
                     break;
                 }
                 case object_type::polygonal: {
-                    float3 a = kg.objects[i].mesh[0];
-                    float3 b = kg.objects[i].mesh[1];
-                    float3 c = kg.objects[i].mesh[2];
-                    primitives::triangle tri { a, b, c};
-
-                    float t, u, v;
-                    if (hit_triangle(ray, tri, t, u, v)) {
-                        result.t = t;
-                        result.object_id = i;
+                    auto mesh_size = kg.objects[i].mesh_size / 3;
+                    for (int j = 0; j < mesh_size; ++j) {
+                        float3 a = kg.objects[i].mesh[j * 3 + 0];
+                        float3 b = kg.objects[i].mesh[j * 3 + 1];
+                        float3 c = kg.objects[i].mesh[j * 3 + 2];
+                        primitives::triangle tri { a, b, c};
+                        float t, u, v;
+                        if (hit_triangle(ray, tri, t_min, result.t, t, u, v)) {
+                            result.t = t;
+                            result.object_id = i;
+                        }
                     }
                 }
             }
